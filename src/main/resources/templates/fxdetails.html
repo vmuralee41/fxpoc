@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="https://www.thymeleaf.org"
+	xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+<title>Fx Data</title>
+<script
+	src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js">
+</script>
+<script>
+
+function getrates(dtype){
+	var txtccy = $("#txtccy").val();
+	var ccydate = $("#ccydate").val();
+	var url="";
+	if(dtype === "latest"){
+		if(txtccy === ""){
+			$("#errordesc").html("Invalid currency symbol");
+			return;
+		}
+		url = "http://localhost:8080/fx/latest/rates/base/"+txtccy;
+	}
+	
+	if(dtype === "history"){
+		if(txtccy === "" || ccydate === ""){
+			$("#errordesc").html("Invalid currency symbol or date ");
+			return;
+		}
+		url = "http://localhost:8080/fx/history/rates/date/"+ccydate+"?baseccy="+txtccy;
+	}
+		
+	$("#errordesc").html("Fetching data ...");
+	$.getJSON(url, function(data){
+	   
+		$('#ccy').html("Exchange rates of GBP,USD,HKD for Currency:"+data.base+"         Date:"+data.date);
+	    var tab = "";
+	       Object.keys(data.rates).forEach(
+					function(key) {
+			
+						var value = data.rates[key];
+						tab += "<tr><td>"
+								+ key
+								+ "</td><td>"
+								+ value
+								+ "</tncfud></tr>";
+			 });
+		    
+		    tab="<table border='1'><tr><th>Currency</th><th>Value</th></tr>"+tab;
+		    tab=tab+"</table>";
+		    
+		    $("#fxdesc").html(tab);
+		    $("#errordesc").html("");
+		    $("#txtccy").val("");
+			$("#ccydate").val("");
+			
+	 })
+	 .error(
+			 function(data) { 
+				 $("#errordesc").html(JSON.stringify(data.responseJSON.errmessage)) }
+			);
+
+	
+}
+
+function getratesmonths(){
+	var txtccy = $("#txtccy").val();
+	var ccydate = $("#ccydate").val();
+	var url="";
+	
+	if(txtccy === "" || ccydate === ""){
+		$("#errordesc").html("Invalid currency symbol or date ");
+		return;
+	}
+	url = "http://localhost:8080/fx/history/rates/months/date/"+ccydate+"?baseccy="+txtccy+"&months=6";
+	$("#errordesc").html("Fetching data ...");
+	$.getJSON(url, function(data){
+	   
+		$('#ccy').html("Exchange rates (6 months) of GBP,USD,HKD for Currency:"+data.base+"         Date:"+data.date);
+		var tab=" ";
+		var mtab=" ";
+		Object.keys(data.rates).forEach(
+		
+				function(key)
+				{
+					tab="<td>"+key+"</td>";
+					Object.keys(data.rates[key]).forEach(
+					
+							function(key1)
+							{
+								tab=tab+"<td>"+(data.rates[key][key1])+"</td>";
+								
+							}
+					);
+					mtab=mtab+"<tr>"+tab+"</tr>";
+				}
+		);
+		
+		mtab="<table border='1'><tr><td></td><td>Month1</td><td>Month2</td><td>Month3</td><td>Month4</td><td>Month5</td><td>Month6</td></tr>"+mtab+"</table>";
+	    
+	    $("#fxdesc").html(mtab);
+	    $("#errordesc").html("");
+	    $("#txtccy").val("");
+		$("#ccydate").val("");
+		
+	})
+	.error(
+			 function(data) { 
+				 $("#errordesc").html(JSON.stringify(data.responseJSON.errmessage)) }
+			);
+
+} 
+
+</script>
+
+
+</head>
+
+<body>
+
+	<div align="right">
+		<form th:action="@{/logout}" method="post">
+			<input type="submit" value="Sign Out" />
+		</form>
+	<br/>		<a href="./swagger-ui.html">API Documentation</a>
+	</div>
+	
+<h3>
+	<div><th:inline="text">Welcome [[${#httpServletRequest.remoteUser}]] </div>
+</h3>
+
+<h3>
+Fx Exchange Rates 
+</h3>	
+	
+<table>
+<tr><td>	
+	<div id="ccy"></div>
+</td></tr>
+<tr><td>	
+	 <div id="fxdesc"></div>
+</td></tr>
+<tr><td>	
+<table>
+<tr>
+	<td>Currency Symbol</td>
+	<td><input type="text" id = "txtccy" value="" maxlength="3" /></td>
+	<td>Date (dd-MM-yyyy)</td>
+	<td><input type="text" id = "ccydate" value="" maxlength="10" /></td>
+</tr>
+<tr>
+   <td colspan="4">
+   <input type="button" id = "latestfx" value="Get Latest Rates (CCY)" onclick="getrates('latest')"/>
+   <input type="button" id = "historyfx" value="Get Rates (CCY & Date)" onclick="getrates('history')"/>
+   <input type="button" id = "historyfxm" value="Get History Rates (CCY & Date)" onclick="getratesmonths()"/>
+   </td>
+  
+</tr>
+</table>
+</td></tr>
+</table>	 
+</beody>
+<footer>
+ 
+ <div id="errordesc" style="color: red"></div>
+</footer>
+</html>
